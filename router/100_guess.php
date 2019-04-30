@@ -31,6 +31,8 @@ $app->router->get("guess/play", function () use ($app) {
     $res = $_SESSION["res"] ?? null;
     $guess = $_SESSION["guess"] ?? null;
 
+    // Unset the flash values from the processing page,
+    // read once and remove
     $_SESSION["res"] = null;
     $_SESSION["guess"] = null;
 
@@ -39,12 +41,39 @@ $app->router->get("guess/play", function () use ($app) {
         "tries" => $tries,
         "number" => $number ?? null,
         "res" => $res,
-        "doGuess" => $doGuess ?? null,
-        "doCheat" => $doCheat ?? null,
+        "doCheat" => false,
     ];
 
     $app->page->add("guess/play", $data);
-    $app->page->add("guess/debug");
+    //$app->page->add("guess/debug");
+
+    return $app->page->render([
+        "title" => $title,
+    ]);
+});
+
+
+
+/**
+ * Cheat by showing the current number.
+ */
+$app->router->get("guess/cheat", function () use ($app) {
+    $title = "Play the game (cheating)";
+
+    // Get current settings from the SESSION
+    $number  = $_SESSION["number"] ?? null;
+    $tries   = $_SESSION["tries"] ?? null;
+
+    $data = [
+        "guess" => null,
+        "tries" => $tries,
+        "number" => $number,
+        "res" => null,
+        "doCheat" => true,
+    ];
+
+    $app->page->add("guess/play", $data);
+    //$app->page->add("guess/debug");
 
     return $app->page->render([
         "title" => $title,
@@ -58,23 +87,18 @@ $app->router->get("guess/play", function () use ($app) {
  */
 $app->router->post("guess/play", function () use ($app) {
     // Deal with incoming variables
-    $guess   = $_POST["guess"] ?? null;
-    $doGuess = $_POST["doGuess"] ?? null;
-    // $doInit  = $_POST["doInit"] ?? null;
-    // $doCheat = $_POST["doCheat"] ?? null;
+    $guess = $_POST["guess"] ?? null;
 
     // Get current settings from the SESSION
     $number  = $_SESSION["number"] ?? null;
     $tries   = $_SESSION["tries"] ?? null;
 
-    if ($doGuess) {
-        // Do a guess
-        $game = new Mos\Guess\Guess($number, $tries);
-        $res = $game->makeGuess($guess);
-        $_SESSION["tries"] = $game->tries();
-        $_SESSION["res"] = $res;
-        $_SESSION["guess"] = $guess;
-    }
+    // Do a guess
+    $game = new Mos\Guess\Guess($number, $tries);
+    $res = $game->makeGuess($guess);
+    $_SESSION["tries"] = $game->tries();
+    $_SESSION["res"] = $res;
+    $_SESSION["guess"] = $guess;
 
     return $app->response->redirect("guess/play");
 });
